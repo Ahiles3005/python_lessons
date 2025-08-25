@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Мини чат с формой</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        #chat {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+            border-bottom: 2px solid #ccc;
+            background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .message {
+            background: #007bff;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 15px;
+            max-width: 60%;
+            word-wrap: break-word;
+        }
+
+        .message.answer {
+            background: #e2e2e2;
+            color: #333;
+            align-self: flex-start;
+        }
+
+        .message.question {
+            align-self: flex-end;
+        }
+
+        form {
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+            border-top: 2px solid #ccc;
+            background: white;
+        }
+
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+
+        button {
+            padding: 0 20px;
+            border: none;
+            background: #007bff;
+            color: white;
+            font-size: 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div id="chat"></div>
+<form id="questionForm">
+    <input type="text" id="questionInput" placeholder="Введите вопрос" required autocomplete="off"/>
+    <button type="submit">Отправить</button>
+</form>
+
+<script>
+    const chat = document.getElementById('chat');
+    const form = document.getElementById('questionForm');
+    const input = document.getElementById('questionInput');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const question = input.value.trim();
+        if (!question) return;
+
+        addMessageToChat(question, 'question');
+        input.value = '';
+        chat.scrollTop = chat.scrollHeight;
+
+        try {
+            // Отправляем POST запрос на /answer с параметром text
+            const response = await fetch('/answer', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: new URLSearchParams({text: question})
+            });
+
+            if (response.ok) {
+                const answerText = await response.text();
+                addMessageToChat(answerText, 'answer');
+                chat.scrollTop = chat.scrollHeight;
+            } else {
+                addMessageToChat('Ошибка при получении ответа от сервера', 'answer');
+            }
+        } catch (error) {
+            addMessageToChat('Ошибка сети', 'answer');
+        }
+    });
+
+    function addMessageToChat(text, type) {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'message ' + type;
+        msgDiv.textContent = text;
+        chat.appendChild(msgDiv);
+    }
+</script>
+</body>
+</html>
